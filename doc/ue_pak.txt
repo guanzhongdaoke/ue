@@ -1,0 +1,139 @@
+FPakPlatformFile
+	/** Wrapped file */
+	IPlatformFile* LowerLevel;
+	/** List of all available pak files. */
+	TArray<FPakListEntry> PakFiles; 会按照ReadOrder排序，可以在Mount的时候指定PakOrder（内部还会在特殊处理一下PakOrder += 100 * ChunkVersionNumber（PAK文件内的版本号）;）
+	/** List of all pak filenames with dynamic encryption where we don't have the key yet */
+	TArray<FPakListDeferredEntry> PendingEncryptedPakFiles;
+	/** True if this we're using signed content. */
+	bool bSigned;
+	/** Synchronization object for accessing the list of currently mounted pak files. */
+	mutable FCriticalSection PakListCritical;
+	/** Cache of extensions that we automatically reject if not found in pak file */
+	TSet<FName> ExcludedNonPakExtensions;
+	/** The extension used for ini files, used for excluding ini files */
+	FString IniFileExtension;
+	/** The filename for the gameusersettings ini file, used for excluding ini files, but not gameusersettings */
+	FString GameUserSettingsIniFilename;
+
+FPakListEntry
+	uint32		ReadOrder;
+	FPakFile*	PakFile;
+
+FPakEntry
+	/** Offset into pak file where the file is stored.*/
+	int64 Offset;
+	/** Serialized file size. */
+	int64 Size;
+	/** Uncompressed file size. */
+	int64 UncompressedSize;
+	/** File SHA1 value. */
+	uint8 Hash[20];
+	/** Array of compression blocks that describe how to decompress this pak entry. */
+	TArray<FPakCompressedBlock> CompressionBlocks;
+	/** Size of a compressed block in the file. */
+	uint32 CompressionBlockSize;
+	/** Index into the compression methods in this pakfile. */
+	uint32 CompressionMethodIndex;
+	/** Pak entry flags. */
+	uint8 Flags;
+	/** Flag is set to true when FileHeader has been checked against PakHeader. It is not serialized. */
+	mutable bool  Verified;
+
+FPakEntryLocation：
+	int32 Index;（index为负数，表示非加密；index为正数，表示是加密）
+
+FPakFile：
+	/** Pak directory type mapping a filename to an FPakEntryLocation. */
+	typedef TMap<FString, FPakEntryLocation> FPakDirectory;
+	/** Index data that provides a map from the hash of a Filename to an FPakEntryLocation */
+	typedef TMap<uint64, FPakEntryLocation> FPathHashIndex;
+	/** Index data that keeps an in-memory directoryname/filename tree to map a Filename to an FPakEntryLocation */
+	typedef TMap<FString, FPakDirectory> FDirectoryIndex;
+
+	/** Pak filename. */
+	FString PakFilename;
+	FName PakFilenameName;
+	/** Archive to serialize the pak file from. */
+	TUniquePtr<class FChunkCacheWorker> Decryptor;
+	/** Map of readers assigned to threads. */
+	TMap<uint32, TUniquePtr<FArchive>> ReaderMap;
+	/** Critical section for accessing ReaderMap. */
+	FCriticalSection CriticalSection;
+	/** Pak file info (trailer). */
+	FPakInfo Info;
+	/** Mount point. */
+	FString MountPoint;
+	/** Info on all files stored in pak. */
+	TArray<FPakEntry> Files;                  PAK包数据不是BIT加密的，则代表了其内部的所有文件信息，FPakEntryLocation中的index代码数组下表，从下表处读取FPakEntry（index为负数，表示非加密）
+	/** Pak Index organized as a map of directories to support searches by path.  This Index is pruned at runtime of all FileNames and Paths that are not whitelisted in DirectoryIndexKeepFiles */
+	FDirectoryIndex DirectoryIndex;
+	#if ENABLE_PAKFILE_RUNTIME_PRUNING
+		/** Temporary-lifetime copy of the Pruned DirectoryIndex; all Pruned files have been removed form this copy.  This copy is used for validation that no queries are missing during runtime, and will be swapped into the DirectoryIndex when Pak Mounting is complete */
+		FDirectoryIndex PrunedDirectoryIndex;
+		/** ReaderWriter lock to guard DirectoryIndex iteration from being interrupted by the swap of PrunedDirectoryIndex */
+		mutable FRWLock DirectoryIndexLock;
+	#endif
+
+	/** Index data that provides a map from the hash of a Filename to an FPakEntryLocation */
+	FPathHashIndex PathHashIndex;
+	/* FPakEntries that have been serialized into a compacted format in an array of bytes. */
+	TArray<uint8> EncodedPakEntries;	  PAK包数据为BIT加密的二进制流，如果是加密的则都要从这个里面读取数据,FPakEntryLocation中的index代码偏移，从偏移处开始读取（index为正数，表示是加密）
+	/* The seed passed to the hash function for hashing filenames in this pak.  Differs per pack so that the same filename in different paks has different hashes */
+	uint64 PathHashSeed;
+
+	/** The number of file entries in the pak file */
+	int32 NumEntries;
+	/** Timestamp of this pak file. */
+	FDateTime Timestamp;	
+	/** TotalSize of the pak file */
+	int64 CachedTotalSize;
+	/** True if this is a signed pak file. */
+	bool bSigned;
+	/** True if this pak file is valid and usable. */
+	bool bIsValid;
+	/* True if the PathHashIndex has been populated for this PakFile */
+	bool bHasPathHashIndex;
+	/* True if the DirectoryIndex has not been pruned and still contains a Filename for every FPakEntry in this PakFile */
+	bool bHasFullDirectoryIndex;
+	#if ENABLE_PAKFILE_RUNTIME_PRUNING
+		/* True if we have a FullDirectoryIndex that we will modify in OptimizeMemoryUsageForMountedPaks and therefore need to guard access with DirectoryIndexLock */
+		bool bWillPruneDirectoryIndex;
+		/* True if the Index of this PakFile was a legacy index that did not have the precomputed Pruned DirectoryIndex and we need to compute it before swapping the Pruned DirectoryIndex*/
+		bool bNeedsLegacyPruning;
+	#endif
+	/** ID for the chunk this pakfile is part of. INDEX_NONE if this isn't a pak chunk (derived from filename) */
+	int32 PakchunkIndex;
+
+	class IMappedFileHandle* MappedFileHandle;
+	FCriticalSection MappedFileHandleCriticalSection;
+
+	/** The type of cache this pak file should have */
+	ECacheType	CacheType;
+	/** The index of this pak file into the cache array, -1 = not initialized */
+	int32		CacheIndex;
+	/** Allow the cache of a pak file to never shrink, should be used with caution, it will burn memory */
+	bool UnderlyingCacheTrimDisabled;
+
+
+template< typename ReaderPolicy = FPakReaderPolicy<> >
+FPakFileHandle
+	/** True if PakReader is shared and should not be deleted by this handle. */
+	const bool bSharedReader;
+	/** Current read position. */
+	int64 ReadPos;
+	/** Class that controls reading from pak file */
+	ReaderPolicy Reader; FPakFileHandle内部的读取，实际都是调用了Reader.Serialize
+	
+
+FPakReaderPolicy
+	/** Pak file that own this file data */
+	const FPakFile&		PakFile;
+	/** Pak file entry for this file. */
+	FPakEntry			PakEntry;
+	/** Pak file archive to read the data from. */
+	TAcquirePakReaderFunction AcquirePakReader;真实的读取文件，通过当前的FPakPlatformFile：LowerLevel创建的FArchive*（CreatePakFileHandle时传入）
+	/** Offset to the file in pak (including the file header). */
+	int64				OffsetToFile;
+	
+

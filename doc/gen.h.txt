@@ -1,0 +1,67 @@
+#include "CoreMinimal.h"
+
+#include "UObject/ObjectMacros.h"
+#include "UObject/ScriptMacros.h"
+
+class THEMYPROJECT_API UMyObject : public UObject
+{
+public:
+    static void execClassFunction(UObject* Context, FFrame& Stack, void* const Z_Param__Result)
+    {
+        UIntProperty::TCppType Z_Param_IntParam = UIntProperty::GetDefaultPropertyValue();
+        Stack.StepCompiledIn<UIntProperty>(&Z_Param_IntParam);;
+        Stack.Code += !!Stack.Code;;
+        {
+            ;;
+            *(int32*)Z_Param__Result = ((ThisClass*)(Context))->ClassFunction(Z_Param_IntParam);
+        };
+    }
+
+private:
+    static void StaticRegisterNativesUMyObject();
+    friend struct Z_Construct_UClass_UMyObject_Statics;
+public:
+private:
+    UMyObject& operator=(UMyObject&&);
+    UMyObject& operator=(const UMyObject&);
+    static UClass* GetPrivateStaticClass();
+public:
+    enum { StaticClassFlags=(0 | CLASS_Intrinsic) };
+
+    typedef UObject Super;
+    typedef UMyObject ThisClass;
+    inline static UClass* StaticClass() { return GetPrivateStaticClass(); }
+    inline static const TCHAR* StaticPackage() { return L"/Script/MyProject"; }
+    inline static EClassCastFlags StaticClassCastFlags() { return CASTCLASS_None; }
+
+    inline void* operator new(const size_t InSize, EInternal InInternalOnly,
+                              UObject* InOuter = (UObject*)GetTransientPackage(), FName InName = NAME_None,
+                              EObjectFlags InSetFlags = RF_NoFlags)
+    {
+        return StaticAllocateObject(StaticClass(), InOuter, InName, InSetFlags);
+    }
+
+    inline void* operator new(const size_t InSize, EInternal* InMem) { return (void*)InMem; }
+    friend FArchive& operator<<(FArchive& Ar, UMyObject*& Res) { return Ar << (UObject*&)Res; }
+    friend void operator<<(FStructuredArchive::FSlot InSlot, UMyObject*& Res) { InSlot << (UObject*&)Res; }
+
+    UMyObject(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get()) : Super(ObjectInitializer)
+    {
+    };
+private:
+    UMyObject(UMyObject&&);
+    UMyObject(const UMyObject&);
+public:
+    UMyObject(FVTableHelper& Helper);;
+    static UObject* __VTableCtorCaller(FVTableHelper& Helper) { return nullptr; };
+    static void __DefaultConstructor(const FObjectInitializer& X) { new((EInternal*)X.GetObj())UMyObject(X); }
+private:
+
+public:
+    int ClassFunction(int IntParam)
+    {
+        return 0;
+    };
+
+    int ClassProperty;
+};

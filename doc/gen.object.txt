@@ -1,0 +1,15 @@
+#include "CoreMinimal.h"
+#include "MyObject.generated.h"
+
+UCLASS()
+class THEMYPROJECT_API UMyObject : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    UFUNCTION()
+    int ClassFunction(int IntParam) { };
+
+    UPROPERTY()
+    int ClassProperty;
+};
