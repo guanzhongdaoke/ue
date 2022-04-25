@@ -1,0 +1,15 @@
+1：程序依赖源码开发
+
+2：美术，测试，策划使用专门提供的Editor打开工程进行编辑和体验测试
+
+3：程序每次编译的时候需要确保BuildId不变，否则会导致老的Editor打不开工程
+   具体做法是：在引擎的Engine\Build\Build.version增加配置"BuildId": "6c67f9c0-e5ec-40c5-8887-062190323cfe"
+   （最好把引擎中这个修改以下，后续这个值不能修改，否则别人就打不开工程了）
+
+4：程序每次新增功能代码，首先需要确保编译成功。提交时需注意：
+	4.1：需要把工程目录Binaries/Win64下面的文件都提交SVN（.target,.modules,.dll，注意.pdb不需要）
+	4.2：把工程目录Plugins下面各个插件的Binaries/Win64下面的文件都提交SVN（.target,.modules,.dll，注意.pdb不需要）
+
+5：程序本地通过引擎编译会修改工程的MOW.uproject里面的EngineAssociation，这样导致别人编辑器打开时弹框“引擎版本不匹配”，最好提交的时候将该字段清空
+
+6：目前整个编辑器是选择Development模式编译提交的（程序平时可以修改为DEBUG，但是提交的版本需要修改回Development编译）
