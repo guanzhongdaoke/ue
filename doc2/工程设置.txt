@@ -13,3 +13,8 @@
 5：程序本地通过引擎编译会修改工程的MOW.uproject里面的EngineAssociation，这样导致别人编辑器打开时弹框“引擎版本不匹配”，最好提交的时候将该字段清空
 
 6：目前整个编辑器是选择Development模式编译提交的（程序平时可以修改为DEBUG，但是提交的版本需要修改回Development编译）
+
+7：编译一次引擎后，如果每次编译项目都不想编译一次引擎，则可以通过两种方式设置：
+   1在引擎Engine/Build目录下建一个空InstalledBuild.txt文件
+   2修改项目编译属性，增加-UsePrecompiled编译参数
+   （上面这种情况，需要确保在编辑器模式下Engine/Intermediate有对应的lib，非编辑器下有obj和prebuild等文件）
