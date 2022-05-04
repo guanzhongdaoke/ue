@@ -10,7 +10,7 @@
 	4.1：需要把工程目录Binaries/Win64下面的文件都提交SVN（.target,.modules,.dll，注意.pdb不需要）
 	4.2：把工程目录Plugins下面各个插件的Binaries/Win64下面的文件都提交SVN（.target,.modules,.dll，注意.pdb不需要）
 
-5：程序本地通过引擎编译会修改工程的MOW.uproject里面的EngineAssociation，这样导致别人编辑器打开时弹框“引擎版本不匹配”，最好提交的时候将该字段清空
+5：程序本地通过引擎编译会修改工程的XXXX.uproject里面的EngineAssociation，这样导致别人编辑器打开时弹框“引擎版本不匹配”，最好提交的时候将该字段清空
 
 6：目前整个编辑器是选择Development模式编译提交的（程序平时可以修改为DEBUG，但是提交的版本需要修改回Development编译）
 
