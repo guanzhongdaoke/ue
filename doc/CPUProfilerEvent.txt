@@ -91,6 +91,7 @@ struct FCpuProfilerEventBatchV2Fields \
 
 
 UE_TRACE_LOG(CpuProfiler, EventBatchV2, true)
+		<< EventBatchV2.Data(InThreadBuffer->Buffer, InThreadBuffer->BufferSize);
 	
 
 	if (TRACE_PRIVATE_CHANNELEXPR_IS_ENABLED(ChannelsExpr)) \
