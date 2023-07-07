@@ -1,0 +1,114 @@
+UE_TRACE_EVENT_BEGIN(CpuProfiler, EventBatchV2, NoSync)
+	UE_TRACE_EVENT_FIELD(uint8[], Data)
+UE_TRACE_EVENT_END()
+
+
+
+static UE::Trace::Private::FEventNode CpuProfilerEventBatchV2EventImpl;
+UE::Trace::Private::FEventNode& CpuProfilerEventBatchV2Event = CpuProfilerEventBatchV2EventImpl;
+
+struct FCpuProfilerEventBatchV2Fields \
+	{ \
+		enum \
+		{ \
+			Important		= UE::Trace::Private::FEventInfo::Flag_Important, \
+			NoSync			= UE::Trace::Private::FEventInfo::Flag_NoSync, \
+			Definition8bit		= UE::Trace::Private::FEventInfo::Flag_Definition8, \
+			Definition16bit		= UE::Trace::Private::FEventInfo::Flag_Definition16, \
+			Definition32bit		= UE::Trace::Private::FEventInfo::Flag_Definition32, \
+			Definition64bit		= UE::Trace::Private::FEventInfo::Flag_Definition64, \
+			DefinitionBits		= UE::Trace::Private::FEventInfo::DefinitionBits, \
+			PartialEventFlags	= (0, NoSync), \
+		}; \
+		enum : bool { bIsImportant = ((0, NoSync) & Important) != 0, bIsDefinition = ((0, NoSync) & DefinitionBits) != 0,\
+		bIsDefinition8 = ((0, NoSync) & Definition8bit) != 0, \
+		bIsDefinition16 = ((0, NoSync) & Definition16bit) != 0,\
+		bIsDefinition32 = ((0, NoSync) & Definition32bit) != 0, \
+		bIsDefinition64 = ((0, NoSync) & Definition64bit) != 0,}; \
+		typedef std::conditional_t<bIsDefinition8, UE::Trace::FEventRef8, std::conditional_t<bIsDefinition16, UE::Trace::FEventRef16 , std::conditional_t<bIsDefinition64, UE::Trace::FEventRef64, UE::Trace::FEventRef32>>> DefinitionType;\
+		static constexpr uint32 GetSize() { return EventProps_Meta::Size; } \
+		static uint32 TSAN_SAFE GetUid() { static uint32 Uid = 0; return (Uid = Uid ? Uid : Initialize()); } \
+		static uint32 FORCENOINLINE Initialize() \
+		{ \
+			static const uint32 Uid_ThreadSafeInit = [] () \
+			{ \
+				using namespace UE::Trace; \
+				static FCpuProfilerEventBatchV2Fields Fields; \
+				static UE::Trace::Private::FEventInfo Info = \
+				{ \
+					FLiteralName(CpuProfiler), \
+					FLiteralName(EventBatchV2), \
+					(FFieldDesc*)(&Fields), \
+					EventProps_Meta::NumFields, \
+					uint16(EventFlags), \
+				}; \
+				return CpuProfilerEventBatchV2Event.Initialize(&Info); \
+			}(); \
+			return Uid_ThreadSafeInit; \
+		} \
+		typedef UE::Trace::TField<0 /*Index*/, 0 /*Offset*/,
+
+
+
+		uint8[]> Data_Meta; \
+		Data_Meta const Data_Field = UE::Trace::FLiteralName(Data); \
+		template <typename... Ts> auto Data(Ts... ts) const { \
+			LogScopeType::FFieldSet<Data_Meta, uint8[]>::Impl((LogScopeType*)this, Forward<Ts>(ts)...); \
+			return true; \
+		} \
+		typedef UE::Trace::TField< \
+			Data_Meta::Index + 1, \
+			Data_Meta::Offset + Data_Meta::Size,
+
+
+		
+		std::conditional<bIsDefinition != 0, DefinitionType, UE::Trace::DisabledField>::type> DefinitionId_Meta;\
+		DefinitionId_Meta const DefinitionId_Field = UE::Trace::FLiteralName("");\
+		static constexpr uint16 NumDefinitionFields = (bIsDefinition != 0) ? 1 : 0;\
+		template<typename RefType>\
+		auto SetDefinitionId(const RefType& Id) const \
+		{ \
+			LogScopeType::FFieldSet<DefinitionId_Meta, RefType>::Impl((LogScopeType*)this, Id); \
+			return true; \
+		} \
+		typedef UE::Trace::TField<DefinitionId_Meta::Index + NumDefinitionFields, DefinitionId_Meta::Offset + DefinitionId_Meta::Size, UE::Trace::EventProps> EventProps_Meta; \
+		EventProps_Meta const EventProps_Private = {}; \
+		typedef std::conditional<bIsImportant != 0, UE::Trace::Private::FImportantLogScope, UE::Trace::Private::FLogScope>::type LogScopeType; \
+		explicit operator bool () const { return true; } \
+		enum { EventFlags = PartialEventFlags|((EventProps_Meta::NumAuxFields != 0) ? UE::Trace::Private::FEventInfo::Flag_MaybeHasAux : 0), }; \
+		static_assert( \
+			(bIsImportant == 0) || (uint32(EventFlags) & uint32(UE::Trace::Private::FEventInfo::Flag_NoSync)), \
+			"Trace events flagged as Important events must be marked NoSync" \
+		); \
+	};
+
+
+
+
+
+
+
+
+
+UE_TRACE_LOG(CpuProfiler, EventBatchV2, true)
+	
+
+	if (TRACE_PRIVATE_CHANNELEXPR_IS_ENABLED(ChannelsExpr)) \
+		if (auto LogScope = FCpuProfilerEventBatchV2Fields::LogScopeType::Enter<FCpuProfilerEventBatchV2Fields>(__VA_ARGS__)) \
+			if (const auto& __restrict EventName = *((FCpuProfilerEventBatchV2Fields*)(&LogScope))) \
+				((void)EventName),
+	LogScope += LogScope
+
+
+
+
+Êý¾Ý¿½±´
+template <typename FieldMeta, typename Type>
+struct FLogScope::FFieldSet
+{
+	static void Impl(FLogScope* Scope, const Type& Value)
+	{
+		uint8* Dest = (uint8*)(Scope->Ptr) + FieldMeta::Offset;
+		::memcpy(Dest, &Value, sizeof(Type));
+	}
+};
